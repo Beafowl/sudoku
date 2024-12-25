@@ -82,15 +82,13 @@ class SudokuSolver:
         pass
 
     def solve(self, s: Sudoku):
-        # TODO: Implement
         # 1. Freies Feld aussuchen
         # 2. Überprüfen, welche Zahl eingesetzt werden kann (Reihe, Spalte und Block überprüfen, Schnittmenge bilden)
-        # 3. Wenn nur eine Zahl möglich, dann einfach einsetzen und true zurückgeben
-        # 4. Wenn keine Zahl möglich, dann false zurückgeben
-        # 5. Wenn mehrere Zahlen möglich, dann eine einsetzen und rekursiv versuchen ein nächstes Feld zu belegen
-        # 6. Wird mit einer Zahl true zurückgegeben, kann true zurückgegeben werden
-        # 7. Schafft es keine Zahl, zum Schluss false zurückgeben
-
+        # 3. Wenn keine Zahl möglich, dann None zurückgeben
+        # 5. Wenn mehrere Zahlen möglich, dann über die Zahlen iterieren
+        # 6. Jede Zahl einsetzen und rekursiv versuchen ein nächstes Feld zu belegen, das Board selbst zurückgeben
+        # 6. Gibt es einen Pfad in der Rekursion, wo alle Felder belegt sind, so werden alle Schleifen durchlaufen und man landet ganz unten
+        # 7. Es wird letzendlich ein Pfad mit vollständigem Sudoku Board zurückgegeben
 
         for y, elem_y in enumerate(s.area):
             for x, elem in enumerate(elem_y):
@@ -113,40 +111,6 @@ class SudokuSolver:
                                 return next_s
         return s
 
-    def solve_iterations(self, s: Sudoku, iterations: int):
-        # TODO: Implement
-        # 1. Freies Feld aussuchen
-        # 2. Überprüfen, welche Zahl eingesetzt werden kann (Reihe, Spalte und Block überprüfen, Schnittmenge bilden)
-        # 3. Wenn nur eine Zahl möglich, dann einfach einsetzen und true zurückgeben
-        # 4. Wenn keine Zahl möglich, dann false zurückgeben
-        # 5. Wenn mehrere Zahlen möglich, dann eine einsetzen und rekursiv versuchen ein nächstes Feld zu belegen
-        # 6. Wird mit einer Zahl true zurückgegeben, kann true zurückgegeben werden
-        # 7. Schafft es keine Zahl, zum Schluss false zurückgeben
-        if iterations == 0:
-            return s
-
-        for y, elem_y in enumerate(s.area):
-            for x, elem in enumerate(elem_y):
-                if elem == 0:
-                    elements_missing_y = self.get_missing_elements(s.area[y,:])
-                    elements_missing_x = self.get_missing_elements(s.area[:,x])
-                    x_block = (x // 3) * 3
-                    y_block = (y // 3) * 3
-                    elements_missing_block = self.get_missing_elements(s.area[y_block:y_block+3,x_block:x_block+3])
-                    possible_elements = list(elements_missing_x.intersection(elements_missing_y.intersection(elements_missing_block)))
-                    if len(possible_elements) == 0:
-                        return None
-                    elif len(possible_elements) == 1:
-                        s.area[y,x] = possible_elements[0]
-                        return s
-                    else:
-                        for possible_element in possible_elements:
-                            s.area[y,x] = possible_element
-                            s_next = self.solve_iterations(s, iterations - 1)
-                            if s_next != None:
-                                return s_next
-        return s
-
     def get_missing_elements(self, arr) -> Set[int]:
         ''''''
         arr = np.ndarray.flatten(arr) # make sure arr is always a one dimensional list
@@ -161,6 +125,7 @@ class SudokuSolver:
 
 if __name__ == '__main__':
 
+    # use deterministic data for debugging
     data = np.array([
         [4,3,0,1,8,0,2,9,0],
         [0,0,1,0,0,9,0,0,6],
