@@ -1,12 +1,36 @@
 import numpy as np
 from typing import List, Set
-from itertools import chain
+from random import shuffle, randint
 
 class Sudoku:
 
-    def __init__(self):
-        np.random.seed(1) # for testing purposes
-        self.area = np.full(shape=(9,9), fill_value=0)
+    def create_area(self):
+        for y in range(9):
+            for x in range(9):
+                if self.area[y,x] == 0:
+                    possible_values = list(range(1,10))
+                    shuffle(possible_values)
+                    for n in possible_values:
+                        if self.is_valid(n, x, y):
+                            self.area[y,x] = n
+                            if self.create_area():
+                                return True
+                            self.area[y,x] = 0
+                    return False
+        return True
+
+    def insert_zeros(self, num=10):
+        possible_values = [(i, j) for i in range(9) for j in range(9)]
+        for i in range(num):
+            random_index = randint(0, len(possible_values)-1)
+            pos = possible_values.pop(random_index)
+            self.area[pos[0],pos[1]] = 0
+
+    def __init__(self, arr=None):
+        np.random.seed(2) # for testing purposes
+        self.area = arr if arr else np.full(shape=(9,9), fill_value=0)
+        self.create_area()
+        self.insert_zeros(num=25)
 
     def __repr__(self):
         line = "-" * 25
@@ -38,6 +62,17 @@ class Sudoku:
             return
         self.area[y,x] = value
 
+    def is_valid(self, value, x, y):
+        # check if placement is allowed
+        if value in self.area[y,:] or value in self.area[:,x]: # check row and col
+            return False
+        # check if value is in the block
+        x_block = (x // 3) * 3
+        y_block = (y // 3) * 3
+        if value in self.area[y_block:y_block+3,x_block:x_block+3].flatten():
+            return False
+        return True
+
     def fields_left(self):
         return 9 * 9 - np.count_nonzero(self.area)
 
@@ -65,19 +100,17 @@ class SudokuSolver:
                     x_block = (x // 3) * 3
                     y_block = (y // 3) * 3
                     elements_missing_block = self.get_missing_elements(s.area[y_block:y_block+3,x_block:x_block+3])
-                    possible_elements = elements_missing_x.intersection(elements_missing_y.intersection(elements_missing_block))
+                    possible_elements = list(elements_missing_x.intersection(elements_missing_y.intersection(elements_missing_block)))
                     if len(possible_elements) == 0:
                         return None
-                    elif len(possible_elements) == 1:
-                        s.area[y,x] = possible_elements[0]
-                        return s
                     else:
                         for possible_element in possible_elements:
                             s.area[y,x] = possible_element
                             next_s = self.solve(s)
+                            if next_s == None:
+                                continue
                             if next_s.fields_left() == 0:
                                 return next_s
-                        return None
         return s
 
     def solve_iterations(self, s: Sudoku, iterations: int):
@@ -104,17 +137,14 @@ class SudokuSolver:
                     if len(possible_elements) == 0:
                         return None
                     elif len(possible_elements) == 1:
-                        print(possible_elements)
                         s.area[y,x] = possible_elements[0]
                         return s
                     else:
                         for possible_element in possible_elements:
                             s.area[y,x] = possible_element
-                            next_s = self.solve_iterations(s, iterations - 1)
-                            
-                            if next_s != None and next_s.fields_left() == 0:
-                                return next_s
-                        return None
+                            s_next = self.solve_iterations(s, iterations - 1)
+                            if s_next != None:
+                                return s_next
         return s
 
     def get_missing_elements(self, arr) -> Set[int]:
@@ -130,8 +160,22 @@ class SudokuSolver:
         return set(current_elements)
 
 if __name__ == '__main__':
+
+    data = np.array([
+        [4,3,0,1,8,0,2,9,0],
+        [0,0,1,0,0,9,0,0,6],
+        [2,9,0,6,4,0,8,7,0],
+        [0,0,8,0,0,5,0,0,4],
+        [3,6,0,8,7,1,0,5,2],
+        [9,0,0,4,0,0,7,0,0],
+        [0,8,7,0,5,2,0,4,3],
+        [5,0,0,3,0,0,1,0,0],
+        [0,4,3,0,1,8,0,2,9]
+    ])
+
+    #s = Sudoku(arr=data)
     s = Sudoku()
     print(s)
     solver = SudokuSolver()
-    puzzle = solver.solve_iterations(s, 10)
-    print(puzzle)
+    s_solved = solver.solve(s)
+    print(s_solved)
